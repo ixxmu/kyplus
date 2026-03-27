@@ -41,6 +41,7 @@ Suggests:
     mnem,
     mirai,
     rmarkdown,
+    qs2,
     qs,
     dce,
     clusterProfiler,
