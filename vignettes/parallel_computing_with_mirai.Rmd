@@ -1,0 +1,34 @@
+---
+title: "Parallel Computing with Mirai"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Parallel Computing with Mirai}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Introduction
+
+This package provides convenient wrapper functions for using mirai for parallel computing.
+
+## Quick Start
+
+\```{r, eval=FALSE}
+library(yourpackage)
+library(mirai)
+
+# Initialize
+init_mirai(n_cores = 4, packages = "dplyr")
+
+# Run parallel tasks
+results <- mirai_map(1:100, function(i) {
+  # Your computation
+})[]
+
+# Cleanup
+cleanup_mirai()
+\```
+
+## Advanced Usage
+
+See `?init_mirai` for more options.

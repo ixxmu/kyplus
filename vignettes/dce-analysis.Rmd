@@ -1,0 +1,440 @@
+---
+title: "Differential Causal Effects (DCE) Analysis with kyplus"
+author: "kyplus package"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Differential Causal Effects (DCE) Analysis with kyplus}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5,
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+## Introduction
+
+Differential Causal Effects (DCE) analysis is a powerful method for identifying dysregulated pathways in disease by comparing causal relationships between genes across different conditions. Unlike traditional correlation-based approaches, DCE focuses on **causal effects** rather than mere associations.
+
+The `kyplus` package provides comprehensive tools for:
+
+1. **Building gene regulatory networks** from expression data
+2. **Running DCE analysis** to identify differential causal effects
+3. **Visualizing results** with enhanced plotting functions
+4. **Batch processing** multiple target genes
+
+This vignette demonstrates a complete DCE analysis workflow.
+
+## Key Concepts
+
+### What is DCE?
+
+DCE quantifies the **difference in causal effects** between two conditions (e.g., healthy vs disease, low vs high expression). For each edge (gene A → gene B) in a regulatory network:
+
+- **Causal Effect (CE)**: How much does gene A causally influence gene B?
+- **Differential Causal Effect (DCE)**: How much does this causal relationship change between conditions?
+
+### When to Use DCE?
+
+DCE is particularly useful for:
+
+- Identifying pathway dysregulation in cancer
+- Understanding how gene interactions change with treatment
+- Analyzing context-specific gene regulation
+- Detecting edges that are rewired between conditions
+
+## Installation
+
+First, install required packages:
+
+```{r install, eval=FALSE}
+# Install kyplus
+# devtools::install_github("ixxmu/kyplus")
+
+# Install Bioconductor dependencies
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install(c("dce", "graph", "minet"))
+```
+
+Load the package:
+
+```{r load}
+library(kyplus)
+library(dce)
+```
+
+## Workflow 1: Complete DCE Analysis Pipeline
+
+### Step 1: Prepare Expression Data
+
+For this example, we'll generate synthetic data representing two conditions:
+
+```{r data_prep}
+set.seed(123)
+
+# Generate expression data for 100 samples and 20 genes
+n_samples <- 100
+n_genes <- 20
+
+# Create gene expression matrix
+expr_matrix <- matrix(rnorm(n_samples * n_genes, mean = 5, sd = 2),
+                     nrow = n_samples,
+                     ncol = n_genes)
+colnames(expr_matrix) <- paste0("Gene", 1:n_genes)
+rownames(expr_matrix) <- paste0("Sample", 1:n_samples)
+
+# View the data structure
+head(expr_matrix[, 1:5])
+dim(expr_matrix)
+```
+
+### Step 2: Split Data by Target Gene Expression
+
+A common analysis is to compare networks between samples with high vs low expression of a key regulator gene:
+
+```{r split_data}
+# Choose a target gene (e.g., a key transcription factor)
+target_gene <- "Gene1"
+
+# Split samples into Low, Medium, and High expression groups
+split_data <- split_expression_by_gene(
+  expr_matrix = expr_matrix,
+  target_gene = target_gene,
+  quantiles = c(0, 0.4, 0.85, 1),  # Creates unequal groups
+  group_labels = c("Low", "Medium", "High")
+)
+
+# View group sizes
+sapply(split_data, nrow)
+```
+
+### Step 3: Run DCE Analysis
+
+Now compare the Low vs High expression groups:
+
+```{r run_dce, eval=FALSE}
+# Extract Low and High groups
+low_expr <- split_data$Low
+high_expr <- split_data$High
+
+# Run complete DCE analysis
+dce_results <- run_dce_analysis(
+  wt_data = low_expr,           # Reference condition (Low expression)
+  mt_data = high_expr,          # Comparison condition (High expression)
+  network_method = "aracne",    # Network construction method
+  threshold = 0.3,              # Edge inclusion threshold
+  max_parents = 3,              # Maximum parent nodes per gene
+  filter_results = TRUE,        # Apply filtering
+  pvalue_threshold = 0.05,      # Significance threshold
+  verbose = TRUE                # Print progress messages
+)
+
+# View the structure
+names(dce_results)
+```
+
+### Step 4: Explore Results
+
+```{r explore_results, eval=FALSE}
+# View filtered significant results
+head(dce_results$filtered_results)
+
+# Summary statistics
+summary(dce_results$filtered_results$dce)
+
+# Count significant edges
+nrow(dce_results$filtered_results)
+```
+
+### Step 5: Visualize DCE Results
+
+#### Network Visualization
+
+```{r plot_network, eval=FALSE, fig.width=8, fig.height=6}
+# Enhanced network plot highlighting the target gene
+plot_dce_network(
+  dce_results$dce_results,
+  highlight_nodes = c(target_gene),
+  pvalue_threshold = 0.05,
+  min_abs_dce = 0.2,
+  arrow_size = 0.03,
+  title = paste("DCE Network - Target:", target_gene)
+)
+```
+
+#### Volcano Plot
+
+```{r volcano_plot, eval=FALSE, fig.width=7, fig.height=5}
+# Volcano plot showing significance vs effect size
+plot_dce_volcano(
+  dce_results$dce_results,
+  pvalue_threshold = 0.05,
+  dce_threshold = 0.3,
+  label_top = 10,  # Label top 10 edges
+  title = "DCE Volcano Plot"
+)
+```
+
+#### Heatmap
+
+```{r heatmap, eval=FALSE, fig.width=8, fig.height=6}
+# Heatmap of DCE values
+plot_dce_heatmap(
+  dce_results$dce_results,
+  pvalue_threshold = 0.05,
+  cluster_rows = TRUE,
+  cluster_cols = TRUE,
+  color_scale = "RdBu",
+  title = "DCE Heatmap"
+)
+```
+
+## Workflow 2: Batch Analysis for Multiple Target Genes
+
+When studying multiple genes (e.g., a pathway), use batch analysis:
+
+```{r batch_analysis, eval=FALSE}
+# Select multiple genes of interest
+target_genes <- c("Gene1", "Gene5", "Gene10")
+
+# Run batch DCE analysis
+batch_results <- batch_dce_analysis(
+  expr_matrix = expr_matrix,
+  target_genes = target_genes,
+  network_method = "correlation",  # Faster method for batch analysis
+  quantiles = c(0, 0.4, 0.85, 1),
+  compare_groups = c("Low", "High"),
+  filter_results = TRUE,
+  pvalue_threshold = 0.05,
+  verbose = TRUE
+)
+
+# Explore results for each gene
+lapply(batch_results, function(x) {
+  cat("\nTarget gene:", x$target_gene, "\n")
+  cat("Significant edges:", nrow(x$filtered_results), "\n")
+  print(head(x$filtered_results, 3))
+})
+```
+
+## Workflow 3: Compare Networks Directly
+
+If you already have two conditions defined (e.g., healthy vs disease):
+
+```{r compare_networks, eval=FALSE}
+# Define two conditions
+condition1_data <- expr_matrix[1:50, ]   # First 50 samples
+condition2_data <- expr_matrix[51:100, ] # Last 50 samples
+
+# Build networks for each condition
+net1 <- build_regulatory_network(
+  condition1_data,
+  method = "aracne",
+  threshold = 0.3
+)
+
+net2 <- build_regulatory_network(
+  condition2_data,
+  method = "aracne",
+  threshold = 0.3
+)
+
+# Compare networks visually
+compare_networks(
+  net1,
+  net2,
+  network1_name = "Condition 1",
+  network2_name = "Condition 2",
+  highlight_nodes = c("Gene1", "Gene5"),
+  show_diff = TRUE
+)
+```
+
+## Advanced: Network Construction Methods
+
+`kyplus` supports multiple network construction methods:
+
+### 1. Correlation (Fast)
+
+```{r method_cor, eval=FALSE}
+net_cor <- build_regulatory_network(
+  expr_matrix[1:50, ],
+  method = "correlation",
+  threshold = 0.5
+)
+```
+
+### 2. Partial Correlation with Ridge Regression (Handles Collinearity)
+
+```{r method_pcor, eval=FALSE}
+net_pcor <- build_regulatory_network(
+  expr_matrix[1:50, ],
+  method = "pcor",
+  threshold = 0.3,
+  handle_colinearity = TRUE,
+  ridge_lambda = 0.1
+)
+```
+
+### 3. Mutual Information (Non-linear Relationships)
+
+```{r method_mi, eval=FALSE}
+net_mi <- build_regulatory_network(
+  expr_matrix[1:50, ],
+  method = "mi",
+  threshold = 0.3
+)
+```
+
+### 4. ARACNE (Recommended for Gene Networks)
+
+ARACNE removes indirect edges using data processing inequality:
+
+```{r method_aracne, eval=FALSE}
+net_aracne <- build_regulatory_network(
+  expr_matrix[1:50, ],
+  method = "aracne",
+  threshold = 0.3,
+  max_parents = 5
+)
+```
+
+## Advanced: Custom Filtering
+
+Fine-tune result filtering:
+
+```{r custom_filter, eval=FALSE}
+# Get all DCE results
+all_results <- as.data.frame(dce_results$dce_results)
+
+# Custom filtering
+significant_results <- filter_dce_results(
+  dce_results$dce_results,
+  pvalue_threshold = 0.01,      # Stricter p-value
+  min_abs_dce = 0.5,            # Large effect size
+  source_genes = c("Gene1"),    # From specific source
+  sort_by = "pvalue",           # Sort by significance
+  decreasing = FALSE            # Most significant first
+)
+
+head(significant_results)
+```
+
+## Interpretation Guide
+
+### Understanding DCE Values
+
+- **Positive DCE**: Causal effect is **stronger** in condition 2 (mt_data)
+- **Negative DCE**: Causal effect is **weaker** in condition 2
+- **Near-zero DCE**: No substantial change between conditions
+- **Large |DCE|**: Strong rewiring of the edge
+
+### Statistical Significance
+
+- **dce_pvalue < 0.05**: Edge shows significant differential regulation
+- Combine with effect size (min_abs_dce) to avoid small but significant effects
+
+### Biological Interpretation
+
+1. **Focus on significant edges** with large effect sizes
+2. **Pathway context**: Are multiple edges in a pathway affected?
+3. **Hub genes**: Do key regulators show many DCE changes?
+4. **Direction**: Is regulation lost, gained, or reversed?
+
+## Real-World Example: Interferon Response
+
+Here's a conceptual example with interferon-stimulated genes (ISGs):
+
+```{r isg_example, eval=FALSE}
+# Suppose you have ISG expression data
+# isg_genes <- c("ISG15", "MX1", "IFIT1", "OAS1", ...)
+
+# Split by ISG15 expression
+# split_data <- split_expression_by_gene(expr_data, "ISG15")
+
+# Run DCE
+# dce_isg <- run_dce_analysis(
+#   wt_data = split_data$Low,
+#   mt_data = split_data$High,
+#   network_method = "aracne"
+# )
+
+# Find edges involving ISG15
+# isg15_edges <- filter_dce_results(
+#   dce_isg$dce_results,
+#   source_genes = "ISG15",
+#   pvalue_threshold = 0.05
+# )
+
+# Visualize
+# plot_dce_network(dce_isg$dce_results, highlight_nodes = "ISG15")
+```
+
+## Troubleshooting
+
+### Issue: No significant edges
+
+**Solutions:**
+- Lower the p-value threshold
+- Reduce `min_abs_dce` threshold
+- Try a different network construction method
+- Increase sample size per condition
+- Check data quality
+
+### Issue: Too many edges
+
+**Solutions:**
+- Increase threshold in `build_regulatory_network()`
+- Reduce `max_parents` parameter
+- Apply stricter filtering (`min_abs_dce`, `pvalue_threshold`)
+- Focus on specific genes with `source_genes` or `target_genes`
+
+### Issue: Network construction fails
+
+**Solutions:**
+- Check for constant genes (zero variance)
+- Ensure sufficient samples (≥20 recommended)
+- Try "correlation" method first (most robust)
+- Handle collinearity with `handle_colinearity = TRUE`
+
+## Best Practices
+
+1. **Sample Size**: Aim for ≥20 samples per condition
+2. **Gene Selection**: Focus on relevant genes (pathways, DE genes)
+3. **Method Choice**:
+   - Start with "correlation" (fast, robust)
+   - Use "aracne" for final analysis (removes indirect edges)
+   - Use "pcor" with collinearity handling for small gene sets
+4. **Threshold Selection**: Balance between sensitivity and specificity
+5. **Multiple Testing**: Consider FDR correction for large-scale analyses
+6. **Biological Validation**: Confirm key findings experimentally
+
+## Citation
+
+If you use DCE analysis in your research, please cite:
+
+- The original DCE paper: Pirkl, M., et al. (2022). "Identifying cancer pathway dysregulations using differential causal effects." *Bioinformatics*, 38(6), 1550-1559.
+- The dce package: https://bioconductor.org/packages/dce
+
+## Session Info
+
+```{r session_info}
+sessionInfo()
+```
+
+## Further Reading
+
+- [DCE Bioconductor page](https://bioconductor.org/packages/dce)
+- [Original DCE paper](https://doi.org/10.1093/bioinformatics/btab847)
+- [ARACNE algorithm](https://doi.org/10.1186/1471-2105-7-S1-S7)
+- [Causal inference in genomics](https://doi.org/10.1038/s41576-018-0020-3)

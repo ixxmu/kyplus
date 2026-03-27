@@ -1,0 +1,62 @@
+Package: kyplus
+Title: Enhanced Project Management Tools for R
+Version: 0.1.2
+Authors@R: 
+    person("Your", "Name", , "your.email@example.com", role = c("aut", "cre"))
+Description: Provides a comprehensive set of tools for R project management,
+    including non-interrupting project creation, automated Git backup,
+    and dependency management. Designed to enhance workflow efficiency
+    while maintaining project organization.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+LinkingTo: Rcpp
+Imports:
+    yaml,
+    git2r,
+    usethis,
+    Rcpp,
+    parallel,
+    naturalsort,
+    ppcor,
+    infotheo,
+    minet,
+    graph,
+    ridge,
+    dplyr,
+    jsonlite,
+    stringr,
+    tidyr,
+    methods, 
+    stats, 
+    utils,
+    magrittr,
+    ggplot2,
+    qs,
+    tools,
+    reshape2
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    mnem,
+    mirai,
+    rmarkdown,
+    dce,
+    clusterProfiler,
+    enrichplot,
+    DOSE,
+    msigdbr,
+    ReactomePA,
+    org.Hs.eg.db,
+    org.Mm.eg.db,
+    org.Rn.eg.db,
+    ggrepel,
+    patchwork,
+    future.apply,
+    httr,
+    ggpubr
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+URL: https://ixxmu.github.io/kyplus
+BugReports: https://github.com/ixxmu/kyplus/issues

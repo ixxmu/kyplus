@@ -1,0 +1,59 @@
+url: https://ixxmu.github.io/kyplus/
+template:
+  bootstrap: 5
+  bootswatch: cosmo
+  bslib:
+    primary: "#0054AD"
+    border-radius: 0.5rem
+    btn-border-radius: 0.25rem
+
+navbar:
+  bg: primary
+  structure:
+    left: [intro, reference, tutorials]
+    right: [search, github]
+  components:
+    intro:
+      text: Get Started
+      href: articles/kyplus.html
+      aria-label: "Get started with kyplus"
+    reference:
+      text: Reference
+      href: reference/index.html
+      aria-label: "Function reference"
+    tutorials:
+      text: Tutorials
+      href: articles/tutorials.html
+      aria-label: "Package tutorials"
+    github:
+      icon: fab fa-github
+      href: https://github.com/ixxmu/kyplus
+      aria-label: "kyplus GitHub repository"
+
+reference:
+  - title: "Project Management"
+    desc: "Functions for creating and managing R project structures"
+    contents:
+      - create_project_structure
+      - load_project
+  - title: "Package Installation"
+    desc: "Functions for optimizing and managing package installations"
+    contents:
+      - setup_cpu_cores
+      - install_essential_packages
+      - install_package_suite
+  - title: "Helper Functions"
+    desc: "Internal utility functions for project management"
+    contents:
+      - starts_with("create_")
+      - starts_with("install_")
+
+articles:
+  - title: "Getting Started"
+    navbar: ~
+    contents:
+    - kyplus
+  - title: "Usage Guides"
+    contents:
+    - project-management
+    - package-installation

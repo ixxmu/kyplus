@@ -1,0 +1,142 @@
+---
+title: "Package Installation Guide"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Package Installation Guide}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Introduction
+
+Installing and managing R packages efficiently is crucial for a smooth development experience. kyplus provides sophisticated tools for optimizing package installation and managing dependencies across different sources (CRAN, Bioconductor, and GitHub).
+
+## Installation Optimization
+
+### CPU Optimization
+
+kyplus begins by optimizing your system's package installation performance:
+
+```r
+library(kyplus)
+
+# Configure optimal CPU usage
+setup_cpu_cores()
+```
+
+This function:
+- Detects available CPU cores
+- Reserves one core for system operations
+- Configures R to use remaining cores for parallel installation
+- Returns the number of cores being used
+
+### Essential Package Installation
+
+Start with essential development tools:
+
+```r
+# Install fundamental packages
+install_essential_packages()
+```
+
+This installs and configures:
+- Development tools (devtools, remotes)
+- Download acceleration tools (wget)
+- Basic utility packages
+
+## Comprehensive Package Suite
+
+The `install_package_suite()` function provides a curated selection of packages for data science and development:
+
+```r
+# Install all recommended packages
+install_package_suite()
+
+# Install specific categories
+install_package_suite(categories = c("cran", "bioc"))
+```
+
+### CRAN Packages
+The suite includes essential packages for:
+- Data manipulation (tidyverse, data.table)
+- Visualization (ggplot2, ggsci)
+- Statistical analysis (survival, caret)
+- Web applications (shiny, shinydashboard)
+- Documentation (bookdown, blogdown)
+
+### Bioconductor Packages
+Specialized packages for bioinformatics:
+- Gene expression analysis (limma, edgeR)
+- Pathway analysis (clusterProfiler)
+- Data annotation (annotate, org.Hs.eg.db)
+
+### GitHub Packages
+Community-developed tools:
+- Custom analysis packages (AnnoProbe, GSVAutils)
+- Specialized utilities (immunedeconv, tinyarray)
+
+## Installation Management
+
+### Silent Installation
+
+For automated scripts, use quiet mode:
+
+```r
+# Silent installation
+install_package_suite(quiet = TRUE)
+```
+
+### Selective Installation
+
+Install only what you need:
+
+```r
+# Install CRAN packages only
+install_package_suite(categories = "cran")
+
+# Install Bioconductor packages only
+install_package_suite(categories = "bioc")
+
+# Install GitHub packages only
+install_package_suite(categories = "github")
+```
+
+## Troubleshooting
+
+### Common Issues and Solutions
+
+System Dependencies:
+- Ensure system libraries are installed
+- Check compiler availability for source packages
+- Verify internet connectivity
+
+Installation Failures:
+- Check error messages in the R console
+- Verify package compatibility
+- Ensure sufficient disk space
+
+### Error Recovery
+
+If installation fails:
+- Review error messages
+- Install missing system dependencies
+- Try installing problematic packages individually
+- Check package documentation for specific requirements
+
+## Best Practices
+
+### Installation Strategy
+- Begin with CPU optimization
+- Install essential packages first
+- Add specialized packages as needed
+- Document package dependencies
+
+### Maintenance
+- Regularly update packages
+- Monitor package conflicts
+- Maintain a list of required packages
+- Use version control for package management
+
+## Conclusion
+
+kyplus simplifies R package management through automated installation and optimization. By following these guidelines, you can maintain a robust and efficient R development environment.
