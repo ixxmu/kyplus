@@ -58,7 +58,8 @@ Suggests:
     httr,
     ggpubr
 Remotes:
-    traversc/qs
+    traversc/qs,
+    cbg-ethz/dce
 biocViews:
 Config/testthat/edition: 3
 VignetteBuilder: knitr
