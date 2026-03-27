@@ -85,6 +85,11 @@ save_compressed_qs <- function(..., list = character(), file = NULL,
     file <- paste0("kyplus_workspace_", timestamp, ".qs2")
   }
 
+  # Auto-append .qs2 extension if missing
+  if (!grepl("\\.(qs2|qs)$", file)) {
+    file <- paste0(file, ".qs2")
+  }
+
   # Warn if user uses old .qs extension
   if (grepl("\\.qs$", file) && !grepl("\\.qs2$", file)) {
     message("\u2139\ufe0f  kyplus \u5df2\u8fc1\u79fb\u5230 qs2 \u683c\u5f0f\u3002\u5efa\u8bae\u4f7f\u7528 .qs2 \u6269\u5c55\u540d\u3002")
