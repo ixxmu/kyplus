@@ -385,7 +385,7 @@ convert_qs_to_qs2 <- function(files = NULL, path = ".", delete_old = FALSE,
   invisible(results)
 }
 
-#' \u4e0b\u73ed\u524d\u4fdd\u5b58\u5de5\u4f5c\u7a7a\u95f4 (Convenience wrapper)
+#' Save Workspace Before End of Day (Convenience wrapper)
 #'
 #' Convenient function for end-of-day workflow. Saves entire workspace, cleans environment,
 #' and restarts R session by default for a fresh start tomorrow.
@@ -419,7 +419,7 @@ save_end_day <- function(file = NULL, compress_level = 3L, restart_session = TRU
   invisible(result)
 }
 
-#' \u4e0a\u73ed\u540e\u6062\u590d\u5de5\u4f5c\u7a7a\u95f4 (Convenience wrapper)
+#' Load Workspace at Start of Day (Convenience wrapper)
 #'
 #' Convenient function for start-of-day workflow. Auto-loads latest workspace backup.
 #' Supports both .qs2 and legacy .qs files.
