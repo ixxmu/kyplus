@@ -10,17 +10,22 @@ vignette: >
 ---
 
 ```{r setup, include = FALSE}
+has_dce <- requireNamespace("dce", quietly = TRUE)
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.width = 7,
   fig.height = 5,
   warning = FALSE,
-  message = FALSE
+  message = FALSE,
+  eval = has_dce
 )
 ```
 
 ## Introduction
+
+> **Note:** This vignette requires the `dce` package. Since `dce` has been removed
+> from Bioconductor 3.22, install it from GitHub: `remotes::install_github("cbg-ethz/dce")`.
 
 Differential Causal Effects (DCE) analysis is a powerful method for identifying dysregulated pathways in disease by comparing causal relationships between genes across different conditions. Unlike traditional correlation-based approaches, DCE focuses on **causal effects** rather than mere associations.
 
@@ -31,44 +36,22 @@ The `kyplus` package provides comprehensive tools for:
 3. **Visualizing results** with enhanced plotting functions
 4. **Batch processing** multiple target genes
 
-This vignette demonstrates a complete DCE analysis workflow.
-
-## Key Concepts
-
-### What is DCE?
-
-DCE quantifies the **difference in causal effects** between two conditions (e.g., healthy vs disease, low vs high expression). For each edge (gene A → gene B) in a regulatory network:
-
-- **Causal Effect (CE)**: How much does gene A causally influence gene B?
-- **Differential Causal Effect (DCE)**: How much does this causal relationship change between conditions?
-
-### When to Use DCE?
-
-DCE is particularly useful for:
-
-- Identifying pathway dysregulation in cancer
-- Understanding how gene interactions change with treatment
-- Analyzing context-specific gene regulation
-- Detecting edges that are rewired between conditions
-
 ## Installation
-
-First, install required packages:
 
 ```{r install, eval=FALSE}
 # Install kyplus
 # devtools::install_github("ixxmu/kyplus")
 
-# Install Bioconductor dependencies
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
+# Install dce from GitHub (removed from Bioconductor 3.22)
+remotes::install_github("cbg-ethz/dce")
 
-BiocManager::install(c("dce", "graph", "minet"))
+# Other Bioconductor dependencies
+BiocManager::install(c("graph", "minet"))
 ```
 
-Load the package:
+Load the packages:
 
-```{r load}
+```{r load, eval = has_dce}
 library(kyplus)
 library(dce)
 ```
