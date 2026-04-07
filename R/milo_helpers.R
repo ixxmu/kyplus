@@ -28,7 +28,8 @@
 #'   and total score (descending). Columns include:
 #'   \describe{
 #'     \item{subtype_anno}{Subtype annotation}
-#'     \item{importance}{Importance label (e.g. "\u2b50\u2b50\u2b50 \u5173\u952e\u4e9a\u7fa4")}
+#'     \item{importance}{Importance label, e.g. "*** key_subtype",
+#'       "** important_subtype", "* candidate_subtype", "- low_confidence"}
 #'     \item{total_score}{Composite score (0-9)}
 #'     \item{direction}{"enriched" or "depleted"}
 #'     \item{n_nhoods}{Number of retained neighbourhoods}
