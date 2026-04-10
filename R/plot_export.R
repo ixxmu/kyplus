@@ -261,8 +261,9 @@ show_export_help <- function() {
   cat("🔸 批量导出:\n")
   cat("   batch_export(plot_list, filename_list, quality = 'medium')\n\n")
 
-  cat("🔸 通用保存 (支持 pheatmap / ComplexHeatmap / ggplot):\n")
-  cat("   save_any_plot(plot_obj, 'output.pdf')  # 自动检测尺寸\n\n")
+  cat("🔸 通用保存 (支持 pheatmap / ComplexHeatmap / ggplot / 当前窗口):\n")
+  cat("   save_any_plot(plot_obj, 'output.pdf')  # 自动检测尺寸\n")
+  cat("   save_any_plot(NULL, 'output.png')       # 保存当前窗口\n\n")
 
   cat("🔸 质量设置说明:\n")
   cat("   • low    : PDF(150DPI), JPG(100DPI, 70%)  - 快速预览\n")
@@ -278,13 +279,17 @@ show_export_help <- function() {
 #' Universal Plot Saver with Auto Size Detection
 #'
 #' @description
-#' Saves any plot object (ggplot2, pheatmap, ComplexHeatmap, or base R) to
-#' file with automatic size detection. For pheatmap and ComplexHeatmap,
-#' dimensions are calculated from the plot object itself. For ggplot2 and
-#' base R plots, user-specified dimensions are used.
+#' Saves any plot object (ggplot2, pheatmap, ComplexHeatmap, recordedplot,
+#' or base R) to file with automatic size detection. When \code{plot_obj}
+#' is \code{NULL}, captures the current graphics device window directly
+#' via \code{dev.copy()}, which is useful for plots that cannot be saved
+#' through standard \code{print()} or \code{grid.draw()} methods.
 #'
-#' @param plot_obj Plot object. Supports:
+#' @param plot_obj Plot object, or \code{NULL} to capture the current
+#'   graphics device. Supports:
 #'   \itemize{
+#'     \item \code{NULL} — captures current device window via dev.copy()
+#'     \item \code{recordedplot} — replays a plot recorded by recordPlot()
 #'     \item \code{pheatmap} — auto-detects width/height from gtable
 #'     \item \code{ComplexHeatmap::Heatmap} — auto-detects after draw()
 #'     \item \code{ggplot2::ggplot} — uses width_base/height_base
@@ -292,10 +297,10 @@ show_export_help <- function() {
 #'   }
 #' @param filename Character. Output file path. Supported extensions:
 #'   \code{.pdf}, \code{.png}, \code{.svg}, \code{.tiff}, \code{.jpg}.
-#' @param width_base Numeric. Base width in inches (used for ggplot/base R).
-#'   Default is 7.
-#' @param height_base Numeric. Base height in inches (used for ggplot/base R).
-#'   Default is 7.
+#' @param width_base Numeric. Base width in inches (used for ggplot/base R
+#'   and as default for device capture). Default is 7.
+#' @param height_base Numeric. Base height in inches (used for ggplot/base R
+#'   and as default for device capture). Default is 7.
 #' @param res Integer. Resolution in DPI for raster formats (png, tiff, jpg).
 #'   Default is 300.
 #' @param ... Additional arguments passed to the graphics device function.
@@ -305,6 +310,11 @@ show_export_help <- function() {
 #' @details
 #' Size detection logic:
 #' \itemize{
+#'   \item \strong{NULL (device capture)}: Uses \code{dev.copy()} to copy
+#'     the current graphics device content to the target file. The source
+#'     device remains open. Uses \code{width_base}/\code{height_base}.
+#'   \item \strong{recordedplot}: Replays the recorded plot via
+#'     \code{replayPlot()} into a new device.
 #'   \item \strong{pheatmap}: Extracts dimensions from the internal gtable
 #'     using \code{grid::convertWidth/convertHeight}, adds 1 inch margin.
 #'   \item \strong{ComplexHeatmap}: Calls \code{draw()} first to compute
@@ -315,6 +325,15 @@ show_export_help <- function() {
 #'
 #' @examples
 #' \dontrun{
+#' # Save the current device window (any plot already displayed)
+#' plot(1:10)
+#' save_any_plot(NULL, "current_window.pdf")
+#'
+#' # Save a recorded plot
+#' plot(1:10, main = "My Plot")
+#' rec <- recordPlot()
+#' save_any_plot(rec, "recorded.png")
+#'
 #' # Save pheatmap (auto size)
 #' library(pheatmap)
 #' p <- pheatmap(matrix(rnorm(100), 10),
@@ -337,7 +356,7 @@ show_export_help <- function() {
 #' @seealso \code{\link{plot_export}}, \code{\link{batch_export}}
 #'
 #' @export
-save_any_plot <- function(plot_obj, filename, width_base = 7, height_base = 7,
+save_any_plot <- function(plot_obj = NULL, filename, width_base = 7, height_base = 7,
                           res = 300, ...) {
   # Get file extension
   ext <- tolower(tools::file_ext(filename))
@@ -346,6 +365,102 @@ save_any_plot <- function(plot_obj, filename, width_base = 7, height_base = 7,
       ". Use: pdf, png, svg, tiff, or jpg.",
       call. = FALSE
     )
+  }
+
+  # --- Ensure output directory exists ---
+  dir_path <- dirname(filename)
+  if (nchar(dir_path) > 0 && dir_path != "." && !dir.exists(dir_path)) {
+    dir.create(dir_path, recursive = TRUE)
+  }
+
+  w <- width_base
+  h <- height_base
+
+  # --- NULL: capture current device via dev.copy() ---
+  if (is.null(plot_obj)) {
+    if (grDevices::dev.cur() == 1L) {
+      stop("No active graphics device to capture. ",
+        "Please create a plot first, or pass a plot object.",
+        call. = FALSE
+      )
+    }
+
+    # Auto-detect current device dimensions
+    dev_dim <- grDevices::dev.size("in")
+    w <- dev_dim[1]
+    h <- dev_dim[2]
+
+    tryCatch(
+      {
+        # Use dev.copy to copy the current device content
+        switch(ext,
+          "pdf"  = grDevices::dev.copy2pdf(file = filename, width = w, height = h),
+          "svg"  = grDevices::dev.copy(grDevices::svg,
+            filename = filename, width = w, height = h
+          ),
+          "png"  = grDevices::dev.copy(grDevices::png,
+            filename = filename, width = w, height = h,
+            units = "in", res = res
+          ),
+          "tiff" = grDevices::dev.copy(grDevices::tiff,
+            filename = filename, width = w, height = h,
+            units = "in", res = res
+          ),
+          "jpg"  = ,
+          "jpeg" = grDevices::dev.copy(grDevices::jpeg,
+            filename = filename, width = w, height = h,
+            units = "in", res = res
+          )
+        )
+        # dev.copy opens a new device; close it to flush the file
+        if (ext != "pdf") {
+          grDevices::dev.off()
+        }
+      },
+      error = function(e) {
+        stop("Device capture failed: ", e$message, call. = FALSE)
+      }
+    )
+
+    message(sprintf(
+      "Saved (device capture): %s (%.2f x %.2f in)", filename, w, h
+    ))
+    return(invisible(list(filename = filename, width = w, height = h)))
+  }
+
+  # --- recordedplot: replay into a new device ---
+  if (inherits(plot_obj, "recordedplot")) {
+    switch(ext,
+      "pdf" = grDevices::pdf(filename, width = w, height = h, ...),
+      "svg" = grDevices::svg(filename, width = w, height = h, ...),
+      "png" = grDevices::png(filename,
+        width = w, height = h,
+        units = "in", res = res, ...
+      ),
+      "tiff" = grDevices::tiff(filename,
+        width = w, height = h,
+        units = "in", res = res, ...
+      ),
+      "jpg" = ,
+      "jpeg" = grDevices::jpeg(filename,
+        width = w, height = h,
+        units = "in", res = res, ...
+      )
+    )
+    tryCatch(
+      {
+        grDevices::replayPlot(plot_obj)
+      },
+      error = function(e) {
+        grDevices::dev.off()
+        stop("Replay recorded plot failed: ", e$message, call. = FALSE)
+      }
+    )
+    grDevices::dev.off()
+    message(sprintf(
+      "Saved (recordedplot): %s (%.2f x %.2f in)", filename, w, h
+    ))
+    return(invisible(list(filename = filename, width = w, height = h)))
   }
 
   # --- Detect plot type and calculate dimensions ---
@@ -380,24 +495,19 @@ save_any_plot <- function(plot_obj, filename, width_base = 7, height_base = 7,
     draw_method <- "grid"
   } else if (inherits(plot_obj, "ggplot")) {
     # ---- ggplot2: use user-specified size ----
-    w <- width_base
-    h <- height_base
     plot_to_draw <- plot_obj
     draw_method <- "print"
+  } else if (inherits(plot_obj, c("grob", "gTree", "gtable"))) {
+    # ---- grid grob/gtable objects ----
+    plot_to_draw <- plot_obj
+    draw_method <- "grid"
   } else {
     # ---- base R or other: use user-specified size ----
-    w <- width_base
-    h <- height_base
     plot_to_draw <- plot_obj
     draw_method <- "print"
   }
 
   # --- Open graphics device ---
-  dir_path <- dirname(filename)
-  if (nchar(dir_path) > 0 && dir_path != "." && !dir.exists(dir_path)) {
-    dir.create(dir_path, recursive = TRUE)
-  }
-
   switch(ext,
     "pdf" = grDevices::pdf(filename, width = w, height = h, ...),
     "svg" = grDevices::svg(filename, width = w, height = h, ...),

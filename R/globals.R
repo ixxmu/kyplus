@@ -8,5 +8,6 @@ utils::globalVariables(c(
   "mean_sfdr", "pct_sig", "logFC_cv", "mean_purity", "mean_logFC",
   "n_nhoods", "logFC_sd", "score_sfdr", "score_pct", "score_cv",
   "score_purity", "score_effect", "score_nhood",
-  "total_score", "importance", "priority", "direction"
+  "total_score", "importance", "priority", "direction",
+  "sample", "tissue", "N_tot", "N_cls", "freq", "rid", "cid", "sig"
 ))

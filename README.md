@@ -289,6 +289,8 @@ go_enrichment <- enrich_dce_results(
 | `save_any_plot()` | 通用保存（支持pheatmap/ComplexHeatmap/ggplot） |
 | `sc_bindprop()` | 计算细胞类型比例 |
 | `sc_bindplot()` | 细胞比例分组对比箱线图 |
+| `sc_calc_tissue_dist()` | 计算细胞类型在不同组织/样本类型中的分布偏好 |
+| `sc_plot_tissue_dist()` | 组织分布偏好热图（O/E比/OR/logFC + 符号标注） |
 
 #### Goldfish配色主题
 
@@ -396,6 +398,78 @@ sc_bindplot(seurat_obj,
   comparisons = list(c("Ctrl", "Treatment"))
 )
 ```
+
+#### 细胞类型组织分布偏好 sc_calc_tissue_dist / sc_plot_tissue_dist
+
+分析细胞类型在不同组织或样本类型中是否富集或耗竭，支持三种统计方法，配套一键热图可视化：
+
+```r
+meta <- seu@meta.data
+
+# ---- 方法1: 卡方检验 O/E 比（快速浏览） ----
+oe <- sc_calc_tissue_dist(meta,
+  col_cluster = "celltype",
+  col_tissue  = "sample_type",
+  method      = "chisq"
+)
+# 数值热图（默认蓝白红，白色=1 即无偏好）
+sc_plot_tissue_dist(oe, method = "chisq")
+
+# 符号标注热图：+++/++/+/+−/−
+sc_plot_tissue_dist(oe, method = "chisq",
+  show_symbols  = TRUE,
+  symbol_breaks = c(0, 0.2, 0.8, 1)   # 可自定义阈值
+)
+# 符号含义（默认阈值）：
+#   O/E = 0        → "-"    (完全耗竭)
+#   0 < O/E < 0.2  → "+/-"  (几乎没有)
+#   0.2 ≤ O/E ≤ 0.8 → "+"   (偏少)
+#   0.8 < O/E ≤ 1  → "++"   (接近预期)
+#   O/E > 1        → "+++"  (富集)
+
+# ---- 方法2: Fisher精确检验（小样本更稳健） ----
+res_f <- sc_calc_tissue_dist(meta,
+  col_cluster  = "celltype",
+  col_tissue   = "sample_type",
+  method       = "fisher",
+  min_row_sum  = 10        # 过滤总数<10的cluster
+)
+sc_plot_tissue_dist(res_f, method = "fisher")  # OR值热图
+
+# 查看详细结果
+res_f$detail      # 完整长表（OR, p.value, p.adj, sig）
+res_f$charSig.tb  # 显著性符号宽表
+
+# ---- 方法3: 频率法（最严谨，需≥3个生物学重复） ----
+res_q <- sc_calc_tissue_dist(meta,
+  col_cluster = "celltype",
+  col_tissue  = "sample_type",
+  col_sample  = "orig.ident",  # 样本ID列
+  method      = "freq"
+)
+sc_plot_tissue_dist(res_q, method = "freq")  # logFC热图
+
+# ---- 自定义热图样式 ----
+sc_plot_tissue_dist(oe, method = "chisq",
+  colors          = c("purple", "white", "orange"),
+  cluster_rows    = FALSE,
+  cluster_columns = FALSE,
+  fontsize_cell   = 10,
+  fontsize_labels = 12
+)
+
+# 保存热图
+ht <- sc_plot_tissue_dist(oe, method = "chisq")
+save_any_plot(ht, "tissue_dist.pdf")
+```
+
+三种方法对比：
+
+| 方法 | 核心指标 | 适用场景 |
+|------|---------|----------|
+| `chisq` | O/E 比 | 快速浏览，适合探索 |
+| `fisher` | OR + p值 | 小样本，需要显著性检验 |
+| `freq` | logFC + t/Wilcoxon | 多样本，以样本为重复单元，最严谨 |
 
 ---
 
