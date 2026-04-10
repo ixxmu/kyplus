@@ -352,21 +352,72 @@ batch_export(
 
 #### 通用保存 save_any_plot
 
-支持 pheatmap、ComplexHeatmap、ggplot2、base R 图形，自动检测尺寸：
+一个函数保存所有类型的 R 图形，支持 7 种输入方式：
+
+| 输入类型 | 尺寸策略 | 说明 |
+|---------|---------|------|
+| `NULL` | 自动读取当前窗口尺寸 | 捕获当前图形设备窗口，适合无法用对象保存的图 |
+| `recordedplot` | 用户指定 | 回放 `recordPlot()` 录制的图形 |
+| `pheatmap` | 自动从 gtable 计算 | 精确还原热图尺寸 |
+| `ComplexHeatmap` | 自动 `draw()` 后计算 | 精确还原热图尺寸 |
+| `grob` / `gtable` | 用户指定 | grid 图形对象，用 `grid.draw()` 绘制 |
+| `ggplot` | 用户指定 | 标准 ggplot2 对象 |
+| 其他 (base R) | 用户指定 | 通过 `print()` 绘制 |
 
 ```r
-# pheatmap — 自动从对象计算宽高
+# ═══════════════════════════════════════════
+# 1. 捕获当前窗口（NULL）
+#    适合：交互式探索后直接保存当前画面
+# ═══════════════════════════════════════════
+plot(pressure)                        # 先画图
+save_any_plot(NULL, "pressure.pdf")   # 保存当前窗口，自动读取窗口尺寸
+
+# Seurat 等复杂图也可以这样保存
+DimPlot(seurat_obj)
+save_any_plot(NULL, "dimplot.png", res = 600)  # 高分辨率 PNG
+
+# ═══════════════════════════════════════════
+# 2. 录制图形 → 回放保存（recordedplot）
+#    适合：录制后多次导出不同格式
+# ═══════════════════════════════════════════
+plot(1:10, main = "My Plot")
+rec <- recordPlot()                   # 录制当前画面
+save_any_plot(rec, "plot.pdf")        # PDF
+save_any_plot(rec, "plot.png")        # PNG
+
+# ═══════════════════════════════════════════
+# 3. pheatmap — 自动计算宽高
+# ═══════════════════════════════════════════
 library(pheatmap)
 p <- pheatmap(mat, cellwidth = 20, cellheight = 20, silent = TRUE)
-save_any_plot(p, "heatmap_auto.pdf")
+save_any_plot(p, "heatmap_auto.pdf")  # 尺寸从 gtable 自动提取
 
-# ComplexHeatmap — 同样自动尺寸
+# ═══════════════════════════════════════════
+# 4. ComplexHeatmap — 自动计算宽高
+# ═══════════════════════════════════════════
 library(ComplexHeatmap)
 ht <- Heatmap(mat)
 save_any_plot(ht, "complex_heatmap.pdf")
 
-# ggplot2 — 指定尺寸
-save_any_plot(g, "scatter.png", width_base = 8, height_base = 6)
+# ═══════════════════════════════════════════
+# 5. grid grob / gtable 对象
+# ═══════════════════════════════════════════
+g <- ggplotGrob(ggplot(mtcars, aes(mpg, hp)) + geom_point())
+save_any_plot(g, "grob_plot.pdf", width_base = 8, height_base = 6)
+
+# ═══════════════════════════════════════════
+# 6. ggplot2 — 指定尺寸
+# ═══════════════════════════════════════════
+p <- ggplot(iris, aes(Sepal.Length, Sepal.Width)) + geom_point()
+save_any_plot(p, "scatter.png", width_base = 8, height_base = 6)
+
+# ═══════════════════════════════════════════
+# 支持的输出格式：pdf, png, svg, tiff, jpg/jpeg
+# ═══════════════════════════════════════════
+save_any_plot(p, "fig.pdf")           # 矢量图（推荐投稿）
+save_any_plot(p, "fig.png", res=600)  # 高清位图
+save_any_plot(p, "fig.svg")           # 网页用矢量图
+save_any_plot(p, "fig.tiff", res=300) # TIFF（部分期刊要求）
 ```
 
 #### 细胞类型比例分析 sc_bindprop / sc_bindplot
