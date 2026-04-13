@@ -1,33 +1,3 @@
-#' Create a new R project structure
-#'
-#' @param path Character. Path where to create the project
-#' @param type Character. Project type: "analysis" or "package"
-#' @param create_project_file Logical. Whether to create .Rproj file
-#' @return Invisible list containing project information
-#' @export
-create_project_structure <- function(path,
-                                     type = c("analysis", "package"),
-                                     create_project_file = TRUE) {
-  type <- match.arg(type)
-
-  if (!dir.exists(path)) {
-    dir.create(path, recursive = TRUE)
-  }
-
-  if (create_project_file) {
-    create_rproj_file(path)
-  }
-
-  create_directory_structure(path, type)
-  create_base_files(path, type)
-
-  invisible(list(
-    path = path,
-    type = type,
-    created_at = Sys.time()
-  ))
-}
-
 #' @keywords internal
 create_base_files <- function(path, type) {
   # Create README file
@@ -141,32 +111,3 @@ create_gitignore_content <- function(type) {
   }
 }
 
-#' @keywords internal
-create_directory_structure <- function(path, type) {
-  dirs <- if (type == "analysis") {
-    c(
-      "R/functions",
-      "R/pipelines",
-      "data/raw",
-      "data/processed",
-      "data/output",
-      "docs/specifications",
-      "docs/reports",
-      "tests/unit",
-      "tests/integration",
-      "config"
-    )
-  } else {
-    c(
-      "R",
-      "man",
-      "data-raw",
-      "inst/extdata",
-      "vignettes",
-      "tests/testthat",
-      "config"
-    )
-  }
-
-  sapply(file.path(path, dirs), dir.create, recursive = TRUE)
-}

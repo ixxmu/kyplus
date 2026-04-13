@@ -5,7 +5,12 @@
 create_rproj_file <- function(path) {
   # RStudio project settings in DCF format (RStudio's native format)
   # Do NOT use YAML format - RStudio expects this specific format
-  proj_content <- c(
+  #
+  # IMPORTANT: Must avoid UTF-8 BOM (Byte Order Mark) which corrupts
+  # DCF parsing and causes RStudio to crash on opening.
+  # Use a raw file connection instead of writeLines(text, filename) to
+  # guarantee no BOM is prepended.
+  proj_content <- paste(
     "Version: 1.0",
     "",
     "RestoreWorkspace: Default",
@@ -21,11 +26,18 @@ create_rproj_file <- function(path) {
     "LaTeX: pdfLaTeX",
     "",
     "AutoAppendNewline: Yes",
-    "StripTrailingWhitespace: Yes"
+    "StripTrailingWhitespace: Yes",
+    "",  # trailing newline
+    sep = "\n"
   )
 
   proj_file <- file.path(path, paste0(basename(path), ".Rproj"))
-  writeLines(proj_content, proj_file)
+
+  # Write as raw bytes to avoid BOM insertion on Windows
+  con <- file(proj_file, open = "wb")
+  on.exit(close(con))
+  writeBin(charToRaw(proj_content), con)
+
   invisible(proj_file)
 }
 
