@@ -1,4 +1,4 @@
-url: https://ixxmu.github.io/kyplus/
+url: https://YOUR_SITE.netlify.app/
 template:
   bootstrap: 5
   bootswatch: cosmo

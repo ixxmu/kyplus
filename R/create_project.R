@@ -51,15 +51,13 @@ create_project_structure <- function(path,
 load_project <- function(path) {
   validate_project_path(path)
 
-  old_wd <- getwd()
-  on.exit(setwd(old_wd))
+  project_path <- normalizePath(path, winslash = "/", mustWork = TRUE)
 
-  setwd(path)
-  load_project_config(path)
-  load_project_environment(path)
+  load_project_config(project_path)
+  load_project_environment(project_path)
 
   invisible(list(
-    path = path,
+    path = project_path,
     loaded_at = Sys.time()
   ))
 }

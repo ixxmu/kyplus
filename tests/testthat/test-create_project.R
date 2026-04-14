@@ -1,4 +1,3 @@
-# Write this content to "tests/testthat/test-create_project.R"
 test_that("project creation works correctly", {
   # Create a temporary directory for testing
   temp_dir <- tempfile("test_project")
