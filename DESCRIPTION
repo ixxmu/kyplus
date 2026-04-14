@@ -37,6 +37,8 @@ Imports:
     reshape2
 Suggests:
     testthat (>= 3.0.0),
+    lintr,
+    styler,
     knitr,
     mnem,
     mirai,
